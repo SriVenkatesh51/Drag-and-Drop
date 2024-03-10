@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: space-around;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+
+        .column {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            width: 30%;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        .column:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .tasks {
+            min-height: 50px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            overflow: auto;
+        }
+
+        .task-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .task-card:hover {
+            transform: scale(1.05);
+        }
+
+        .add-task {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .add-task:hover {
+            background-color: #0056b3;
+        }
+
+        .task-count {
+            font-weight: bold;
+            color: #007BFF;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        .delete-all {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .delete-all:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="column" id="not-started">
+        <h2>Not Started (<span class="task-count">0</span>)</h2>
+        <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+        
+        </div>
+        <button class="add-task" onclick="addNewTask('not-started')">+ New</button>
+        <button class="delete-all" onclick="deleteAllTasks('not-started')">Delete All</button>
+    </div>
+
+    <div class="column" id="in-progress">
+        <h2>In Progress (<span class="task-count">0</span>)</h2>
+        <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+           
+        </div>
+        <button class="add-task" onclick="addNewTask('in-progress')">+ New</button>
+        <button class="delete-all" onclick="deleteAllTasks('in-progress')">Delete All</button>
+    </div>
+
+    <div class="column" id="completed">
+        <h2>Completed (<span class="task-count">0</span>)</h2>
+        <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+            
+        </div>
+        <button class="add-task" onclick="addNewTask('completed')">+ New</button>
+        <button class="delete-all" onclick="deleteAllTasks('completed')">Delete All</button>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTaskDetailsModal">&times;</span>
+            <h2>Edit Task</h2>
+            <input type="text" id="editedTaskTitle" placeholder="Enter new task title">
+            <button onclick="saveEditedTaskTitle()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeBoard();
+        });
+
+        function initializeBoard() {
+            const columns = document.querySelectorAll(".column");
+
+            columns.forEach((column) => {
+                const tasks = column.querySelector(".tasks");
+                const addTaskButton = column.querySelector(".add-task");
+
+                addTaskButton.addEventListener("click", () => {
+                    const taskTitle = prompt("Enter task title:");
+                    if (taskTitle) {
+                        addNewTaskToColumn(column.id, taskTitle);
+                    }
+                });
+
+                tasks.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text/plain", e.target.id);
+                    e.dataTransfer.setData("source-column", column.id);
+                });
+
+                tasks.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                });
+
+                tasks.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    const taskId = e.dataTransfer.getData("text/plain");
+                    const sourceColumnId = e.dataTransfer.getData("source-column");
+                    const targetColumnId = column.id;
+
+                    if (sourceColumnId !== targetColumnId) {
+                        moveTask(taskId, targetColumnId);
+                    }
+                });
+
+                tasks.addEventListener("click", (e) => {
+                    const taskId = e.target.id;
+                    openTaskDetailsModal(taskId);
+                });
+            });
+        }
+
+        function addNewTaskToColumn(columnId, taskTitle) {
+            const column = document.getElementById(columnId);
+            const tasksContainer = column.querySelector(".tasks");
+
+            const taskCard = document.createElement("div");
+            taskCard.classList.add("task-card");
+            taskCard.textContent = taskTitle;
+            taskCard.draggable = true;
+            taskCard.id = "task-" + Date.now();
+
+            tasksContainer.appendChild(taskCard);
+            updateTaskCount(columnId);
+        }
+
+        function moveTask(taskId, targetColumnId) {
+            const targetColumn = document.getElementById(targetColumnId);
+            const tasksContainer = targetColumn.querySelector(".tasks");
+            const taskCard = document.getElementById(taskId);
+
+            tasksContainer.appendChild(taskCard);
+            updateTaskCount(taskCard.parentElement.id);
+            updateTaskCount(targetColumnId);
+            updateTaskCount(columnId);
+        }
+
+        function updateTaskCount(columnId) {
+            const column = document.getElementById(columnId);
+            const taskCountElement = column.querySelector('.task-count');
+            const taskCards = column.querySelectorAll('.task-card');
+            taskCountElement.innerHTML = taskCards.length;
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            const taskId = e.dataTransfer.getData("text/plain");
+            const targetColumnId = e.target.closest('.column').id;
+            moveTask(taskId, targetColumnId);
+            updateTaskCount(taskId);
+            updateTaskCount(columnId);
+        }
+
+        function addNewTask(columnId) {
+            const taskTitle = prompt("Enter task title:");
+            if (taskTitle) {
+                addNewTaskToColumn(columnId, taskTitle);
+            }
+        }
+
+        function openTaskDetailsModal(taskId) {
+            const modal = document.getElementById("myModal");
+            const span = document.getElementsByClassName("close")[0];
+            const editedTaskTitleInput = document.getElementById("editedTaskTitle");
+
+            modal.style.display = "block";
+            editedTaskTitleInput.value = document.getElementById(taskId).textContent;
+
+            span.setAttribute("data-task-id", taskId);
+
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        }
+
+        function saveEditedTaskTitle() {
+            const modal = document.getElementById("myModal");
+            const editedTaskTitleInput = document.getElementById("editedTaskTitle");
+            const taskId = document.getElementsByClassName("close")[0].getAttribute("data-task-id");
+
+            if (taskId) {
+                const taskCard = document.getElementById(taskId);
+                taskCard.textContent = editedTaskTitleInput.value;
+                modal.style.display = "none";
+            }
+        }
+
+        function deleteAllTasks(columnId) {
+            const column = document.getElementById(columnId);
+            const tasksContainer = column.querySelector(".tasks");
+            tasksContainer.innerHTML = ''; 
+            updateTaskCount(columnId);
+        }
+    </script>
+</body>
+</html>
