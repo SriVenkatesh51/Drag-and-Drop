@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+   
+</head>
+<body>
+    <div class="task-column" id="not-started">
+        <h2>Not Started (<span class="task-count">0</span>)</h2>
+        <div class="task-list" ondrop="handleDropEvent(event)" ondragover="handleDragOverEvent(event)">
+        
+        </div>
+        <button class="add-task-btn" onclick="handleAddTask('not-started')">+ New</button>
+        <button class="delete-all-btn" onclick="handleDeleteAllTasks('not-started')">Delete All</button>
+    </div>
+
+    <div class="task-column" id="in-progress">
+        <h2>In Progress (<span class="task-count">0</span>)</h2>
+        <div class="task-list" ondrop="handleDropEvent(event)" ondragover="handleDragOverEvent(event)">
+           
+        </div>
+        <button class="add-task-btn" onclick="handleAddTask('in-progress')">+ New</button>
+        <button class="delete-all-btn" onclick="handleDeleteAllTasks('in-progress')">Delete All</button>
+    </div>
+
+    <div class="task-column" id="completed">
+        <h2>Completed (<span class="task-count">0</span>)</h2>
+        <div class="task-list" ondrop="handleDropEvent(event)" ondragover="handleDragOverEvent(event)">
+            
+        </div>
+        <button class="add-task-btn" onclick="handleAddTask('completed')">+ New</button>
+        <button class="delete-all-btn" onclick="handleDeleteAllTasks('completed')">Delete All</button>
+    </div>
+
+    <button class="reset-btn" onclick="handleResetAllTasks()">Reset All</button>
+
+    <div id="taskModal" class="task-modal">
+        <div class="task-modal-content">
+            <span class="task-close" onclick="handleCloseTaskModal">&times;</span>
+            <h2>Edit Task</h2>
+            <input type="text" id="editedTaskTitle" placeholder="Enter new task title">
+            <button onclick="handleSaveEditedTaskTitle()">Save Changes</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
